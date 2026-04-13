@@ -14,7 +14,7 @@ if (!(globalThis as any).crypto) {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, writable: false });
 }
 
-import { generateSalt } from '../../../lib/utils/passwordHash';
+import { generateSalt } from '../../../../lib/utils/passwordHash';
 
 describe('UT-DM-11', () => {
   it('Verify generateSalt: 2 lan goi -> 2 gia tri KHAC NHAU (unique)', () => {

@@ -6,7 +6,7 @@
  * Technique: testChuan — Date instance branch
  */
 
-import { convertTimestamps } from '../../../features/quiz/utils/timestamps';
+import { convertTimestamps } from '../../../../features/quiz/utils/timestamps';
 
 describe('UT-DM-15', () => {
   it('Verify convertTimestamps: Date instance -> ISO string', () => {

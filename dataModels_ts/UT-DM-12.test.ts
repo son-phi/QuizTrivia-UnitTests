@@ -14,7 +14,7 @@ if (!(globalThis as any).crypto?.subtle) {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, writable: false });
 }
 
-import { createPasswordHash } from '../../../lib/utils/passwordHash';
+import { createPasswordHash } from '../../../../lib/utils/passwordHash';
 
 describe('UT-DM-12', () => {
   it('Verify createPasswordHash: trả về { salt, hash } object đúng cấu trúc', async () => {

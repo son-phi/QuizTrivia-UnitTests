@@ -6,7 +6,7 @@
  * Technique: testNgoaile — null input boundary
  */
 
-import { convertTimestamps } from '../../../features/quiz/utils/timestamps';
+import { convertTimestamps } from '../../../../features/quiz/utils/timestamps';
 
 describe('UT-DM-13', () => {
   it('Verify convertTimestamps: null input -> return null', () => {

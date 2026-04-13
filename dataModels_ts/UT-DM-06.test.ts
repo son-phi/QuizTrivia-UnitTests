@@ -34,15 +34,21 @@ import { cleanDataForFirestore } from '../../firestoreService';
 
 describe('UT-DM-06', () => {
   it('Verify cleanDataForFirestore: strip undefined, giu null', () => {
-    // 1. Test Data
-    const input = { a: 1, b: undefined, c: null };
+    // 1. Test Data — nested object dung theo spec
+    // input = { a: 1, b: undefined, c: { d: undefined, e: null } }
+    const input = { a: 1, b: undefined, c: { d: undefined, e: null } };
 
     // 2. Test Function
     const result = cleanDataForFirestore(input);
 
-    // 3. Expected Result: strip undefined, keep null
+    // 3. Expected Result: { a: 1, c: { e: null } }
+    // - b bi xoa (undefined top-level)
+    // - c.d bi xoa (undefined nested)
+    // - c.e giu nguyen (null duoc giu)
     expect(result).not.toHaveProperty('b');
-    expect(result).toHaveProperty('c', null);
     expect(result.a).toBe(1);
+    expect(result.c).toBeDefined();
+    expect(result.c).not.toHaveProperty('d');
+    expect(result.c).toHaveProperty('e', null);
   });
 });

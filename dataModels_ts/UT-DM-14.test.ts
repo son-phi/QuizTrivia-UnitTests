@@ -6,7 +6,7 @@
  * Technique: testChuan — array branch
  */
 
-import { convertTimestamps } from '../../../features/quiz/utils/timestamps';
+import { convertTimestamps } from '../../../../features/quiz/utils/timestamps';
 
 describe('UT-DM-14', () => {
   it('Verify convertTimestamps: array chua Timestamp -> moi item duoc convert', () => {

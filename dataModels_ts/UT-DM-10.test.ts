@@ -15,7 +15,7 @@ if (!(globalThis as any).crypto?.subtle) {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, writable: false });
 }
 
-import { sha256 } from '../../../lib/utils/passwordHash';
+import { sha256 } from '../../../../lib/utils/passwordHash';
 
 describe('UT-DM-10', () => {
   it('Verify sha256: input cố định -> hash xác định (deterministic)', async () => {

@@ -6,7 +6,7 @@
  * Technique: testChuan — primitive value branch
  */
 
-import { convertTimestamps } from '../../../features/quiz/utils/timestamps';
+import { convertTimestamps } from '../../../../features/quiz/utils/timestamps';
 
 describe('UT-DM-16', () => {
   it('Verify convertTimestamps: string/number -> giu nguyen khong thay doi', () => {

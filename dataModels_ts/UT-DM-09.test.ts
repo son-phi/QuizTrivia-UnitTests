@@ -8,7 +8,7 @@
  *        Timestamp(1735689600, 0) = 2026-01-01T00:00:00.000Z
  */
 
-import { convertTimestamps } from '../../../features/quiz/utils/timestamps';
+import { convertTimestamps } from '../../../../features/quiz/utils/timestamps';
 
 describe('UT-DM-09', () => {
   it('Verify convertTimestamps: Firestore Timestamp -> ISO string', () => {
