@@ -9,151 +9,7 @@
 // ============================================================
 
 import { Question, AnswerValue, AnswerMap } from '../../../../types';
-
-// ============================================================
-// SECTION: Standalone pure functions extracted from useQuizSession.ts
-// These are extracted here for unit testing without the React hook wrapper.
-// ============================================================
-
-/**
- * checkShortAnswer — extracted from utils.ts
- * Normalizes both sides: trim + lowercase + collapse whitespace.
- * Checks correctAnswer first, then acceptedAnswers[].
- */
-const checkShortAnswer = (userAnswer: string, question: Question): boolean => {
-  if (question.type !== 'short_answer') return false;
-
-  const normalizeAnswer = (answer: string) =>
-    answer.trim().toLowerCase().replace(/\s+/g, ' ');
-
-  const normalizedUserAnswer = normalizeAnswer(userAnswer);
-
-  if (question.correctAnswer && normalizeAnswer(question.correctAnswer) === normalizedUserAnswer) {
-    return true;
-  }
-
-  if (question.acceptedAnswers) {
-    return question.acceptedAnswers.some(
-      (accepted) => normalizeAnswer(accepted) === normalizedUserAnswer
-    );
-  }
-
-  return false;
-};
-
-/**
- * isAnswerCorrect — extracted from useQuizSession.ts
- * Core grading engine — handles all 11 question types.
- */
-const isAnswerCorrect = (question: Question, userAnswer: AnswerValue): boolean => {
-  if (userAnswer === undefined || userAnswer === null) {
-    return false;
-  }
-
-  switch (question.type) {
-    case 'boolean':
-    case 'multiple':
-    case 'image':
-    case 'audio':
-    case 'video':
-    case 'multimedia': {
-      const correctAnswerId = question.answers.find((a) => a.isCorrect)?.id;
-      return userAnswer === correctAnswerId;
-    }
-
-    case 'checkbox': {
-      const correctIds = question.answers
-        .filter((a) => a.isCorrect)
-        .map((a) => a.id)
-        .sort();
-      const userIds = Array.isArray(userAnswer) ? [...userAnswer].sort() : [];
-      return JSON.stringify(correctIds) === JSON.stringify(userIds);
-    }
-
-    case 'short_answer': {
-      if (typeof userAnswer === 'string') {
-        return checkShortAnswer(userAnswer, question);
-      }
-      return false;
-    }
-
-    case 'ordering': {
-      const userOrder = Array.isArray(userAnswer) ? userAnswer : [];
-      const items = question.orderingItems || [];
-      if (userOrder.length !== items.length) return false;
-      const correctOrder = [...items]
-        .sort((a, b) => a.correctOrder - b.correctOrder)
-        .map((item) => item.id);
-      return JSON.stringify(userOrder) === JSON.stringify(correctOrder);
-    }
-
-    case 'matching': {
-      const userMatches =
-        typeof userAnswer === 'object' && !Array.isArray(userAnswer)
-          ? (userAnswer as Record<string, string>)
-          : {};
-      const pairs = question.matchingPairs || [];
-      if (Object.keys(userMatches).length !== pairs.length) return false;
-      return pairs.every((pair) => userMatches[pair.left] === pair.right);
-    }
-
-    case 'fill_blanks': {
-      const userAnswers =
-        typeof userAnswer === 'object' && !Array.isArray(userAnswer)
-          ? (userAnswer as Record<string, string>)
-          : {};
-      const blanks = question.blanks || [];
-      return blanks.every((blank) => {
-        const userText = (userAnswers[blank.id] || '').trim();
-        const correctText = blank.correctAnswer.trim();
-        const matches = blank.caseSensitive
-          ? userText === correctText
-          : userText.toLowerCase() === correctText.toLowerCase();
-        if (matches) return true;
-        if (blank.acceptedAnswers && blank.acceptedAnswers.length > 0) {
-          return blank.acceptedAnswers.some((accepted) =>
-            blank.caseSensitive
-              ? userText === accepted.trim()
-              : userText.toLowerCase() === accepted.trim().toLowerCase()
-          );
-        }
-        return false;
-      });
-    }
-
-    default:
-      return false;
-  }
-};
-
-/**
- * calculateScore — extracted from useQuizSession.ts
- * Unanswered questions (key absent from answersMap) count as wrong.
- * Percentage = Math.round((correct / total) * 100); returns 0 when total = 0.
- */
-const calculateScore = (
-  questions: Question[],
-  answersMap: AnswerMap
-): { correct: number; total: number; percentage: number } => {
-  let correctAnswers = 0;
-  const totalQuestions = questions.length;
-
-  questions.forEach((question) => {
-    const userAnswer = answersMap[question.id];
-    if (isAnswerCorrect(question, userAnswer)) {
-      correctAnswers++;
-    }
-  });
-
-  const percentage =
-    totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-
-  return {
-    correct: correctAnswers,
-    total: totalQuestions,
-    percentage,
-  };
-};
+import { isAnswerCorrect, calculateScore } from '../../../../utils/scoring';
 
 // ============================================================
 // TEST SUITES
@@ -561,6 +417,65 @@ describe('isAnswerCorrect', () => {
       acceptedAnswers: ['paris'],
     } as unknown as Question;
     const userAnswer: AnswerValue = 'London';
+
+    // Gọi hàm cần test
+    const result = isAnswerCorrect(mockQuestion, userAnswer);
+
+    // Kiểm tra kết quả với expected output từ spec
+    expect(result).toBe(false);
+  });
+
+  it('isAnswerCorrect_testNgoaile7_ShortAnswer_non_string_answer_returns_false', () => {
+    // TC: UT-SC-20 | testNgoaile7
+    // Purpose: Kiểm tra câu hỏi tự luận ngắn khi userAnswer không phải string (là array)
+    // Expected from spec: typeof userAnswer !== 'string' → nhánh else → false (dòng 43)
+
+    // Khai báo input
+    const mockQuestion = {
+      id: 'q20',
+      text: 'What is the capital of France?',
+      type: 'short_answer',
+      answers: [],
+      points: 1,
+      correctAnswer: 'Paris',
+    } as unknown as Question;
+    const userAnswer = ['Paris'] as unknown as AnswerValue;
+
+    // Gọi hàm cần test
+    const result = isAnswerCorrect(mockQuestion, userAnswer);
+
+    // Kiểm tra kết quả với expected output từ spec
+    expect(result).toBe(false);
+  });
+
+  it('isAnswerCorrect_testNgoaile8_FillBlanks_one_blank_fails_acceptedAnswers_returns_false', () => {
+    // TC: UT-SC-21 | testNgoaile8
+    // Purpose: Kiểm tra fill_blanks khi blank 1 đúng trực tiếp, blank 2 sai cả direct match lẫn acceptedAnswers
+    // Expected from spec: blanks.every → blank 2 không khớp → return false (dòng 77–107)
+
+    // Khai báo input
+    const mockQuestion = {
+      id: 'q21',
+      text: 'Fill in the capitals.',
+      type: 'fill_blanks',
+      answers: [],
+      points: 1,
+      blanks: [
+        {
+          id: 'b1',
+          correctAnswer: 'Paris',
+          caseSensitive: false,
+          acceptedAnswers: [],
+        },
+        {
+          id: 'b2',
+          correctAnswer: 'London',
+          caseSensitive: false,
+          acceptedAnswers: ['England capital'],
+        },
+      ],
+    } as unknown as Question;
+    const userAnswer = { b1: 'paris', b2: 'wrong' } as unknown as AnswerValue;
 
     // Gọi hàm cần test
     const result = isAnswerCorrect(mockQuestion, userAnswer);
